@@ -5,5 +5,5 @@
     "unity": "2019.3",
     "description": "Unity assembly definition utilities.",
     "keywords": ["asmdef", "editor"],
-    "author" : { "name": "naninunenoy" }
+    "author" : { "name": "kerembaydogan" }
 }
