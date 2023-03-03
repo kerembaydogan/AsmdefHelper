@@ -10,14 +10,14 @@ namespace AsmdefHelper.DependencyGraph.Editor.NodeView {
 
     public static class ViewExtension {
         public static Vector2 GetPositionXY(this IRect rect) {
-            return new Vector2(rect.PositionX, rect.PositionY);
+            return new(rect.PositionX, rect.PositionY);
         }
         public static void SetPositionXY(this IRect rect, Vector2 pos) {
             rect.PositionX = pos.x;
             rect.PositionY = pos.y;
         }
         public static Rect AsRect(this IRect rect) {
-            return new Rect(rect.PositionX, rect.PositionY, rect.Width, rect.Height);
+            return new(rect.PositionX, rect.PositionY, rect.Width, rect.Height);
         }
     }
 }

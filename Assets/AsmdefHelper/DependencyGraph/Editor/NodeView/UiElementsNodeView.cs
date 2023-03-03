@@ -1,5 +1,4 @@
 using UnityEditor.Experimental.GraphView;
-using UnityEngine;
 
 namespace AsmdefHelper.DependencyGraph.Editor.NodeView {
     public class UiElementsNodeView : Node, INodeView {
@@ -11,12 +10,12 @@ namespace AsmdefHelper.DependencyGraph.Editor.NodeView {
 
         public float PositionX {
             get => transform.position.x;
-            set => transform.position = new Vector3(value, PositionY, transform.position.z);
+            set => transform.position = new(value, PositionY, transform.position.z);
         }
 
         public float PositionY {
             get => transform.position.y;
-            set => transform.position = new Vector3(PositionX, value, transform.position.z);
+            set => transform.position = new(PositionX, value, transform.position.z);
         }
 
         public float Height => contentRect.height;

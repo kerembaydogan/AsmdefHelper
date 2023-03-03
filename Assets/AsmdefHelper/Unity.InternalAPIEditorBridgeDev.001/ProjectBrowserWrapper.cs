@@ -1,16 +1,16 @@
 ﻿using UnityEditor;
 
-namespace AsmdefHelper.UnityInternal {
+namespace AsmdefHelper.Unity.InternalAPIEditorBridgeDev._001 {
     public class ProjectBrowserWrapper : EditorWindow {
-        ProjectBrowser projectBrowser;
+        private ProjectBrowser _projectBrowser;
 
         public void GetProjectBrowser() {
-            projectBrowser = GetWindow<ProjectBrowser>();
+            _projectBrowser = GetWindow<ProjectBrowser>();
         }
 
         public void SetSearch(string searchText) {
-            if (projectBrowser != null) {
-                projectBrowser.SetSearch(searchText);
+            if (_projectBrowser != null) {
+                _projectBrowser.SetSearch(searchText);
             }
         }
     }

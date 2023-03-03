@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,72 +7,74 @@ using UnityEditor.Compilation;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace AsmdefHelper.DependencyGraph.Editor {
+namespace AsmdefHelper.DependencyGraph.Editor.AsmdefSelectionView {
     public class AsmdefSelectionView : EditorWindow {
-        const int toggleCount = 1000;
-        static EditorWindow graphWindow;
-        readonly ToggleDict groupMasterToggleDict = new ToggleDict();
-        readonly ToggleDict toggleDict = new ToggleDict();
-        IToggleCheckDelegate toggleDelegate;
+        private const int ToggleCount = 1000;
+        private static EditorWindow _graphWindow;
+        private readonly ToggleDict _groupMasterToggleDict = new();
+        private readonly ToggleDict _toggleDict = new();
+        private IToggleCheckDelegate _toggleDelegate;
+
 
         public void OnEnable() {
-            graphWindow = GetWindow<AsmdefGraphEditorWindow>();
+            _graphWindow = GetWindow<AsmdefGraphEditorWindow>();
+            var root = rootVisualElement;
+            var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/AsmdefHelper/DependencyGraph/Editor/AsmdefSelectionView/AsmdefSelectionView.uxml");
 
-            // Each editor window contains a root VisualElement object
-            VisualElement root = rootVisualElement;
-
-            // Import UXML
-            var visualTree =
-                AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
-                    "Assets/AsmdefHelper/DependencyGraph/Editor/AsmdefSelectionView/AsmdefSelectionView.uxml");
             if (visualTree == null) {
-                visualTree =
-                    AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
-                        "Packages/dev.n5y.asmdefhelper/AsmdefHelper/DependencyGraph/Editor/AsmdefSelectionView/AsmdefSelectionView.uxml");
+                visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Packages/dev.n5y.asmdefhelper/AsmdefHelper/DependencyGraph/Editor/AsmdefSelectionView/AsmdefSelectionView.uxml");
             }
 
 #if UNITY_2020_1_OR_NEWER
-            VisualElement labelFromUXML = visualTree.Instantiate();
+            VisualElement labelFromUxml = visualTree.Instantiate();
 #else
             VisualElement labelFromUXML = visualTree.CloneTree();
 #endif
-            root.Add(labelFromUXML);
+            root.Add(labelFromUxml);
         }
 
-        public void SetAsmdef(Assembly[] assemblies, IToggleCheckDelegate toggleDelegate_) {
+
+        public void SetAsmdef(IEnumerable<Assembly> assemblies, IToggleCheckDelegate toggleDelegate) {
             var sortedAssemblies = assemblies.OrderBy(x => x.name).ToArray();
+
             var scrollView = rootVisualElement.Q<ScrollView>(className: "ScrollView");
-            toggleDict.Clear();
-            for (var i = 0; i < toggleCount; i++) {
+
+            _toggleDict.Clear();
+
+            for (var i = 0; i < ToggleCount; i++) {
+
                 var toggle = rootVisualElement.Q<Toggle>(className: $"toggle{i}");
+
+                if (toggle == null) {
+                    Debug.LogError("toggle== null");
+                    continue;
+                }
+
                 if (i < sortedAssemblies.Length) {
                     var assemblyName = sortedAssemblies[i].name;
                     toggle.text = assemblyName;
-                    toggle.value = true;
-                    toggleDict.Add(assemblyName, new UiElementToggle(toggle));
+                    toggle.value = false;
+                    _toggleDict.Add(assemblyName, new UiElementToggle(toggle));
                 } else {
                     scrollView.Remove(toggle);
                 }
             }
 
-            // グループに分ける
             var group = new DomainGroup();
             group.Create(sortedAssemblies.Select(x => x.name));
             var tops = group.GetTopDomainsWithSomeSubDomains().ToArray();
             foreach (var top in tops) {
-                var topToggle = new Toggle { text = top, value = true};
+                var topToggle = new Toggle { text = top, value = false };
                 var slaveToggles = new List<IToggle>();
                 Toggle firstToggle = null;
-                var domains = group.GetSubDomains(top);
+                var domains = group.GetSubDomains(top).ToArray();
                 foreach (var domain in domains) {
                     var isLast = domains.Last() == domain;
-                    if (toggleDict.TryGetToggle(domain.FullName, out var toggle)) {
-                        var keisen = isLast ? "└" : "├";
-                        toggle.Name = domain.HasSubDomain() ? $"{keisen} {domain.SubDomain}" : toggle.Name;
-                        slaveToggles.Add(toggle);
-                        if (firstToggle == null && toggle is UiElementToggle y) {
-                            firstToggle = y.Toggle;
-                        }
+                    if (!_toggleDict.TryGetToggle(domain.FullName, out var toggle)) continue;
+                    toggle.Name = domain.HasSubDomain() ? $"{(isLast ? "└" : "├")} {domain.SubDomain}" : toggle.Name;
+                    slaveToggles.Add(toggle);
+                    if (firstToggle == null && toggle is UiElementToggle y) {
+                        firstToggle = y.Toggle;
                     }
                 }
 
@@ -83,7 +83,7 @@ namespace AsmdefHelper.DependencyGraph.Editor {
                     var index = scrollView.IndexOf(firstToggle);
                     // グループに属する toggle は box に入れる
                     var box = new Box();
-                    scrollView.Insert(index, topToggle);
+                    scrollView.Insert(index,     topToggle);
                     scrollView.Insert(index + 1, box);
                     foreach (var slaveToggle in slaveToggles) {
                         if (slaveToggle is UiElementToggle x) {
@@ -92,33 +92,28 @@ namespace AsmdefHelper.DependencyGraph.Editor {
                     }
                 }
 
-                groupMasterToggleDict.Add(top, toggleGroup);
+                _groupMasterToggleDict.Add(top, toggleGroup);
             }
 
-            toggleDelegate = toggleDelegate_;
+            _toggleDelegate = toggleDelegate;
         }
 
-        void OnGUI() {
-            // toggle の更新を監視 (onValueChangedが無さそう)
-            // ToggleGroup の長
-            var updatedGroups = groupMasterToggleDict.ScanUpdate().ToArray();
-            groupMasterToggleDict.OverwriteToggles(updatedGroups.Select(x => x.Item1));
-            // 普通の Toggle達
-            var updated = toggleDict.ScanUpdate().ToArray();
+
+        private void OnGUI() {
+            var updatedGroups = _groupMasterToggleDict.ScanUpdate().ToArray();
+            _groupMasterToggleDict.OverwriteToggles(updatedGroups.Select(x => x.Item1));
+            var updated = _toggleDict.ScanUpdate().ToArray();
             foreach (var x in updated) {
                 var (key, current) = x;
-                toggleDelegate?.OnSelectionChanged(key, current);
+                _toggleDelegate?.OnSelectionChanged(key, current);
             }
         }
 
-        // 片方を閉じる
-        async void OnDestroy() {
-            // 同フレームで OnDestroy を呼ぶと警告が出るので遅延実行
+
+        private async void OnDestroy() {
             await Task.Delay(1);
-            if (graphWindow != null) {
-                graphWindow.Close();
-            }
-            graphWindow = null;
+            if (_graphWindow != null) _graphWindow.Close();
+            _graphWindow = null;
         }
     }
 }
