@@ -5,7 +5,7 @@ namespace AsmdefHelper.DependencyGraph.Editor {
     public class AsmdefGraphEditorWindow : EditorWindow, IToggleCheckDelegate {
         private static AsmdefSelectionView.AsmdefSelectionView _selectionWindow;
 
-        private AsmdefGraphView _graphView;
+        private AsmdefGraphViewAsTree _graphView;
 
 
         [MenuItem("AsmdefHelper/Open DependencyGraph", priority = 2000)]

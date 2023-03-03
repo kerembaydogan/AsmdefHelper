@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 
 namespace AsmdefHelper.DependencyGraph.Editor
 {
-    public sealed class AsmdefGraphView : GraphView
+    public sealed class AsmdefGraphViewAsTree : GraphView
     {
         private readonly Dictionary<string, IAsmdefNodeView> _asmdefNodeDict;
         private readonly Dictionary<string, NodeProfile> _nodeProfiles;
@@ -19,7 +19,7 @@ namespace AsmdefHelper.DependencyGraph.Editor
         private readonly IEnumerable<SortedNode> _sortedNode;
 
 
-        public AsmdefGraphView(IEnumerable<Assembly> assemblies)
+        public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
             var assemblyArr = assemblies.ToArray();
 
