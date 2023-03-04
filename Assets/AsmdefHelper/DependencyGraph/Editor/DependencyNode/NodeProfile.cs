@@ -10,6 +10,13 @@ namespace AsmdefHelper.DependencyGraph.Editor.DependencyNode {
             Name = name;
         }
 
+
+        public override string ToString()
+        {
+            return $"{nameof(Id)}: {Id}, {nameof(Name)}: {Name}";
+        }
+
+
         public bool Equals(NodeProfile other)
         {
             if (ReferenceEquals(null, other)) return false;

@@ -10,15 +10,15 @@ namespace AsmdefHelper.DependencyGraph.Editor.DependencyNode {
             foreach (var n in array) {
                 foreach (var d in n.Destinations) {
                     dict[d.Id].Sources.Add(n.Profile);
-                }
-            }
+                } 
+            } 
         }
 
         public static void SetRequireNodes(this IDependencyNode node, IEnumerable<NodeProfile> requireNodes) {
             node.Sources.Clear();
             node.Destinations.Clear();
             foreach (var d in requireNodes) {
-                node.Destinations.Add(d);
+                node.Destinations.Add(d); 
             }
         }
     }

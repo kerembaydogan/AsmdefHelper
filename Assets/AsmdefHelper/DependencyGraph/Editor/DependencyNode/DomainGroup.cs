@@ -1,67 +1,89 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace AsmdefHelper.DependencyGraph.Editor.DependencyNode {
-    public class DomainGroup {
-        readonly Dictionary<string, List<DomainUnit>> dict;
+namespace AsmdefHelper.DependencyGraph.Editor.DependencyNode
+{
+    public class DomainGroup
+    {
+        private readonly Dictionary<string, List<DomainUnit>> _dict;
 
-        public DomainGroup() {
-            dict = new Dictionary<string, List<DomainUnit>>();
+
+        public DomainGroup()
+        {
+            _dict = new();
         }
 
-        public void Create(IEnumerable<string> all) {
-            dict.Clear();
-            foreach (var str in all) {
+
+        public void Create(IEnumerable<string> all)
+        {
+            _dict.Clear();
+            foreach (var str in all)
+            {
                 var unit = new DomainUnit(str, '.');
-                if (!unit.HasSubDomain()) {
-                    unit = new DomainUnit(str, '-');
+                if (!unit.HasSubDomain())
+                {
+                    unit = new(str, '-');
                 }
-                if (!unit.HasSubDomain()) {
-                    unit = new DomainUnit(str, '_');
+                if (!unit.HasSubDomain())
+                {
+                    unit = new(str, '_');
                 }
 
-                if (!unit.HasSubDomain()) {
-                    dict.Add(unit.FullName, new List<DomainUnit> { unit });
-                } else {
-                    if (dict.TryGetValue(unit.TopDomain, out var list)) {
+                if (!unit.HasSubDomain())
+                {
+                    _dict.Add(unit.FullName, new() { unit });
+                }
+                else
+                {
+                    if (_dict.TryGetValue(unit.TopDomain, out var list))
+                    {
                         list.Add(unit);
-                    } else {
-                        dict.Add(unit.TopDomain, new List<DomainUnit> { unit });
+                    }
+                    else
+                    {
+                        _dict.Add(unit.TopDomain, new() { unit });
                     }
                 }
             }
-            // 1つしかなかったものを単独とする
             var soloKeys = GetSoloDomains().ToArray();
-            foreach (var key in soloKeys) {
-                var unit = dict[key].FirstOrDefault();
-                if (unit == null || key == unit.FullName) {
+
+            foreach (var key in soloKeys)
+            {
+                var unit = _dict[key].FirstOrDefault();
+                if (unit == null || key == unit.FullName)
+                {
                     continue;
                 }
 
-                dict.Remove(key);
+                _dict.Remove(key);
                 var newKey = unit.FullName;
-                if (dict.ContainsKey(newKey)) {
-                    dict[newKey].Add(unit);
-                } else {
-                    dict.Add(newKey, new List<DomainUnit> { new DomainUnit(unit.FullName, '\0') });
+                if (_dict.ContainsKey(newKey))
+                {
+                    _dict[newKey].Add(unit);
+                }
+                else
+                {
+                    _dict.Add(newKey, new() { new(unit.FullName, '\0') });
                 }
             }
         }
 
-        public IEnumerable<string> GetTopDomains() => dict.Keys;
-        public IEnumerable<string> GetSoloDomains() => dict
-            .Where(x => x.Value.Count == 1)
-            .Select(x => x.Key);
 
-        public IEnumerable<string> GetTopDomainsWithSomeSubDomains() => dict
-            .Keys
-            .Except(GetSoloDomains());
+        public IEnumerable<string> GetTopDomains() => _dict.Keys;
 
-        public IEnumerable<DomainUnit> GetSubDomains(string topDomain) {
-            if (dict.TryGetValue(topDomain, out var list)) {
+        public IEnumerable<string> GetSoloDomains() => _dict.Where(x => x.Value.Count == 1).Select(x => x.Key);
+
+        public IEnumerable<string> GetTopDomainsWithSomeSubDomains() => _dict.Keys.Except(GetSoloDomains());
+
+
+        public IEnumerable<DomainUnit> GetSubDomains(string topDomain)
+        {
+            if (_dict.TryGetValue(topDomain, out var list))
+            {
                 return list;
             }
-            return new DomainUnit[0];
+            return Array.Empty<DomainUnit>();
         }
     }
 }

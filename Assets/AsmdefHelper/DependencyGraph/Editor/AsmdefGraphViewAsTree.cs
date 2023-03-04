@@ -12,9 +12,10 @@ namespace AsmdefHelper.DependencyGraph.Editor
 {
     public sealed class AsmdefGraphViewAsTree : GraphView
     {
-        private readonly Dictionary<string, IAsmdefNodeView> _asmdefNodeDict;
-        private readonly Dictionary<string, NodeProfile> _nodeProfiles;
-        private readonly Dictionary<string, IDependencyNode> _dependencies;
+        private readonly Dictionary<string, IAsmdefNodeView> _asmdefNodeDict = new();
+
+        private readonly Dictionary<string, NodeProfile> _nodeProfiles2;
+        private readonly Dictionary<string, IDependencyNode> _dependencies2;
         private readonly AlignSortStrategy _sortStrategy;
         private readonly IEnumerable<SortedNode> _sortedNode;
 
@@ -22,6 +23,8 @@ namespace AsmdefHelper.DependencyGraph.Editor
         public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
             var assemblyArr = assemblies.ToArray();
+            // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
+            // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
 
@@ -31,31 +34,26 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
             this.AddManipulator(new ContentDragger());
 
-            _asmdefNodeDict = new();
+            List<string> asmdefPathList = new();
+            GenerateRecursiveDict(assemblyArr, asmdefPathList);
+            asmdefPathList.Sort();
 
-            foreach (var asm in assemblyArr)
+            foreach (var asmdefPath in asmdefPathList)
             {
-                var node = new AsmdefNode(asm.name, contentContainer);
+                var node = new AsmdefNode(asmdefPath, contentContainer);
                 AddElement(node);
-                _asmdefNodeDict.Add(node.title, node);
+                _asmdefNodeDict.Add(asmdefPath, node);
             }
 
-            _nodeProfiles = assemblyArr.Select((x, i) => new NodeProfile(new(i), x.name)).ToDictionary(x => x.Name);
+            _nodeProfiles2 = asmdefPathList.Select((path, _) => new NodeProfile(new(path), path)).ToDictionary(np => np.Name);
 
-            _dependencies = new(_nodeProfiles.Count);
+            _dependencies2 = new(_nodeProfiles2.Count);
 
-            foreach (var asm in assemblyArr)
-            {
-                if (!_nodeProfiles.TryGetValue(asm.name, out var profile)) continue;
-                var requireProfiles = asm.assemblyReferences.Where(x => _nodeProfiles.ContainsKey(x.name)).Select(x => _nodeProfiles[x.name]);
-                var dep = new HashSetDependencyNode(profile);
-                dep.SetRequireNodes(requireProfiles);
-                _dependencies.Add(profile.Name, dep);
-            }
+            GenerateRecursiveDependenciesDict(assemblyArr, _nodeProfiles2, _dependencies2);
 
-            NodeProcessor.SetBeRequiredNodes(_dependencies.Values);
+            NodeProcessor.SetBeRequiredNodes(_dependencies2.Values);
 
-            foreach (var dep in _dependencies.Values)
+            foreach (var dep in _dependencies2.Values)
             {
                 if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var fromNode)) continue;
                 foreach (var dest in dep.Destinations)
@@ -65,7 +63,7 @@ namespace AsmdefHelper.DependencyGraph.Editor
                 }
             }
 
-            foreach (var dep in _dependencies.Values)
+            foreach (var dep in _dependencies2.Values)
             {
                 if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var node)) continue;
                 node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
@@ -74,45 +72,83 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
             _sortStrategy = new(AlignParam.Default(), Vector2.zero);
 
-            _sortedNode = _sortStrategy.Sort(_dependencies.Values);
+            _sortedNode = _sortStrategy.Sort(_dependencies2.Values);
 
-            foreach (var node in _sortedNode)
+            foreach (var nodeFromSorted in _sortedNode)
             {
-                if (!_asmdefNodeDict.TryGetValue(node.Profile.Name, out var nodeView)) continue;
-                nodeView.SetPositionXY(node.Position);
-                nodeView.Visibility = false;
+                if (!_asmdefNodeDict.TryGetValue(nodeFromSorted.Profile.Name, out var node)) continue;
+                node.SetPositionXY(nodeFromSorted.Position);
+                node.Visibility = false;
+            }
+
+            foreach (var dep in _dependencies2.Values)
+            {
+                if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var node)) continue;
+                node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
+                node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
+
+                // var b = dep.Sources.Count == 0 && dep.Destinations.Count == 0;
+                // if (b)
+                // {
+                //     node.Visibility = false;
+                // }
+            }
+        }
+
+
+        private static void GenerateRecursiveDict(IEnumerable<Assembly> assemblyArr, ICollection<string> dict, string root = "")
+        {
+            foreach (var asm in assemblyArr)
+            {
+                Debug.Log(root + "/" + asm.name);
+                dict.Add(root + "/" + asm.name);
+                GenerateRecursiveDict(asm.assemblyReferences, dict, root + "/" + asm.name);
+            }
+        }
+
+
+        private static void GenerateRecursiveDependenciesDict(IEnumerable<Assembly> assemblyArr, IReadOnlyDictionary<string, NodeProfile> nodeProfiles, IDictionary<string, IDependencyNode> dict, string rootAsmName = "", string rootProfileName = "")
+        {
+            foreach (var asm in assemblyArr)
+            {
+                var asmName = rootAsmName + "/" + asm.name;
+
+                if (!nodeProfiles.TryGetValue(asmName, out var profile)) continue;
+                var requireProfiles = asm.assemblyReferences.Where(x => nodeProfiles.ContainsKey(asmName + "/" + x.name)).Select(x => nodeProfiles[asmName + "/" + x.name]).ToArray();
+
+                Debug.Log("requireProfiles " + requireProfiles.Length);
+
+                var dep = new HashSetDependencyNode(profile);
+                dep.SetRequireNodes(requireProfiles);
+                var profileName = rootProfileName + profile.Name;
+
+                dict.Add(profileName, dep);
+
+                GenerateRecursiveDependenciesDict(asm.assemblyReferences, nodeProfiles, dict, asmName, profileName);
             }
         }
 
 
         public void SetNodeVisibility(string nodeName, bool visibleOuter)
         {
-            Debug.Log(_asmdefNodeDict);
-            Debug.Log(_dependencies);
-            Debug.Log(_nodeProfiles);
-            Debug.Log(_sortStrategy);
-            Debug.Log(_sortedNode);
+            var key = nodeName.StartsWith("/") ? nodeName : "/" + nodeName;
 
-            if (!_asmdefNodeDict.TryGetValue(nodeName, out var node))
+            if (!_asmdefNodeDict.TryGetValue(key, out var node))
             {
-                Debug.LogWarning(nodeName + " NOT FOUND");
+                Debug.LogWarning(key + " NOT FOUND");
                 return;
             }
-            Debug.Log(nodeName + " FOUND");
+
             node.Visibility = visibleOuter;
 
-            var tryGetValue = _dependencies.TryGetValue(nodeName, out var dep);
+            var tryGetValue = _dependencies2.TryGetValue(key, out var dep);
 
-            if (tryGetValue)
+            if (!tryGetValue) return;
+            Debug.Log(dep.Destinations.Count);
+
+            foreach (var valueDestination in dep.Destinations)
             {
-                Debug.Log(dep.Destinations.Count);
-
-                foreach (var valueDestination in dep.Destinations)
-                {
-                    Debug.Log(nodeName + " " + valueDestination.Name + "/" + valueDestination.Id);
-                    // if (visibleOuter) SetNodeVisibility(valueDestination.Name, true);
-                    SetNodeVisibility(valueDestination.Name, visibleOuter);
-                }
+                SetNodeVisibility(valueDestination.Name, visibleOuter);
             }
         }
 

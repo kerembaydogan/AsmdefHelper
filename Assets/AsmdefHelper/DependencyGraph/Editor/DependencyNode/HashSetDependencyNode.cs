@@ -3,16 +3,22 @@ using System.Collections.Generic;
 namespace AsmdefHelper.DependencyGraph.Editor.DependencyNode {
     public class HashSetDependencyNode : IDependencyNode {
         public NodeProfile Profile { get; }
-        public ICollection<NodeProfile> Sources => sources;
-        public ICollection<NodeProfile> Destinations => destinations;
+        public ICollection<NodeProfile> Sources => _sources;
+        public ICollection<NodeProfile> Destinations => _destinations;
 
-        readonly HashSet<NodeProfile> sources;
-        readonly HashSet<NodeProfile> destinations;
+        private readonly HashSet<NodeProfile> _sources;
+        private readonly HashSet<NodeProfile> _destinations;
 
         public HashSetDependencyNode(NodeProfile profile) {
             Profile = profile;
-            sources = new HashSet<NodeProfile>();
-            destinations = new HashSet<NodeProfile>();
+            _sources = new();
+            _destinations = new();
+        }
+
+
+        public override string ToString()
+        {
+            return $"{nameof(Profile)}: {Profile}, {nameof(Sources)}: {Sources}, {nameof(Destinations)}: {Destinations}";
         }
     }
 }

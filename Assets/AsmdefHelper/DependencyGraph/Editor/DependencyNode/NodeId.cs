@@ -2,9 +2,9 @@ using System;
 
 namespace AsmdefHelper.DependencyGraph.Editor.DependencyNode {
     public readonly struct NodeId : IEquatable<NodeId> {
-        public readonly int value;
+        public readonly string value;
 
-        public NodeId(int value) => this.value = value;
+        public NodeId(string value) => this.value = value;
 
         public bool Equals(NodeId other) {
             return value == other.value;
@@ -15,7 +15,7 @@ namespace AsmdefHelper.DependencyGraph.Editor.DependencyNode {
         }
 
         public override int GetHashCode() {
-            return value;
+            return value.GetHashCode();
         }
 
         public override string ToString() {
