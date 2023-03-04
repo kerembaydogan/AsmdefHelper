@@ -14,17 +14,12 @@ namespace AsmdefHelper.DependencyGraph.Editor
     {
         private readonly Dictionary<string, IAsmdefNodeView> _asmdefNodeDict = new();
 
-        private readonly Dictionary<string, NodeProfile> _nodeProfiles2;
         private readonly Dictionary<string, IDependencyNode> _dependencies2;
-        private readonly AlignSortStrategy _sortStrategy;
-        private readonly IEnumerable<SortedNode> _sortedNode;
 
 
         public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
             var assemblyArr = assemblies.ToArray();
-            // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
-            // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
 
@@ -45,11 +40,11 @@ namespace AsmdefHelper.DependencyGraph.Editor
                 _asmdefNodeDict.Add(asmdefPath, node);
             }
 
-            _nodeProfiles2 = asmdefPathList.Select((path, _) => new NodeProfile(new(path), path)).ToDictionary(np => np.Name);
+            var nodeProfiles2 = asmdefPathList.Select((path, _) => new NodeProfile(new(path), path)).ToDictionary(np => np.Name);
 
-            _dependencies2 = new(_nodeProfiles2.Count);
+            _dependencies2 = new(nodeProfiles2.Count);
 
-            GenerateRecursiveDependenciesDict(assemblyArr, _nodeProfiles2, _dependencies2);
+            GenerateRecursiveDependenciesDict(assemblyArr, nodeProfiles2, _dependencies2);
 
             NodeProcessor.SetBeRequiredNodes(_dependencies2.Values);
 
@@ -70,11 +65,11 @@ namespace AsmdefHelper.DependencyGraph.Editor
                 node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
             }
 
-            _sortStrategy = new(AlignParam.Default(), Vector2.zero);
+            AlignSortStrategy sortStrategy = new(AlignParam.Default(), Vector2.zero);
 
-            _sortedNode = _sortStrategy.Sort(_dependencies2.Values);
+            var sortedNode = sortStrategy.Sort(_dependencies2.Values);
 
-            foreach (var nodeFromSorted in _sortedNode)
+            foreach (var nodeFromSorted in sortedNode)
             {
                 if (!_asmdefNodeDict.TryGetValue(nodeFromSorted.Profile.Name, out var node)) continue;
                 node.SetPositionXY(nodeFromSorted.Position);
@@ -87,11 +82,10 @@ namespace AsmdefHelper.DependencyGraph.Editor
                 node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
                 node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
 
-                // var b = dep.Sources.Count == 0 && dep.Destinations.Count == 0;
-                // if (b)
-                // {
-                //     node.Visibility = false;
-                // }
+                if (dep.Sources.Count == 0 && dep.Destinations.Count == 0)
+                {
+                    node.Visibility = false;
+                }
             }
         }
 
@@ -100,7 +94,6 @@ namespace AsmdefHelper.DependencyGraph.Editor
         {
             foreach (var asm in assemblyArr)
             {
-                Debug.Log(root + "/" + asm.name);
                 dict.Add(root + "/" + asm.name);
                 GenerateRecursiveDict(asm.assemblyReferences, dict, root + "/" + asm.name);
             }
@@ -115,9 +108,6 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
                 if (!nodeProfiles.TryGetValue(asmName, out var profile)) continue;
                 var requireProfiles = asm.assemblyReferences.Where(x => nodeProfiles.ContainsKey(asmName + "/" + x.name)).Select(x => nodeProfiles[asmName + "/" + x.name]).ToArray();
-
-                Debug.Log("requireProfiles " + requireProfiles.Length);
-
                 var dep = new HashSetDependencyNode(profile);
                 dep.SetRequireNodes(requireProfiles);
                 var profileName = rootProfileName + profile.Name;
@@ -153,9 +143,6 @@ namespace AsmdefHelper.DependencyGraph.Editor
         }
 
 
-        public override List<Port> GetCompatiblePorts(Port startAnchor, NodeAdapter nodeAdapter)
-        {
-            return ports.ToList();
-        }
+        public override List<Port> GetCompatiblePorts(Port startAnchor, NodeAdapter nodeAdapter) => ports.ToList();
     }
 }
