@@ -19,7 +19,9 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
         public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
-            var assemblyArr = assemblies.ToArray();
+            // var assemblyArr = assemblies.ToArray();
+            var assemblyArr = assemblies.Where(e => e.name is "GameCode" or "PuzzleSudoku").ToArray();
+            // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
 
