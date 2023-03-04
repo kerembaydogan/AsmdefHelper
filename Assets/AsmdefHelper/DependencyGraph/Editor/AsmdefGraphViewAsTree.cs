@@ -19,8 +19,7 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
         public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
-            // var assemblyArr = assemblies.ToArray();
-            var assemblyArr = assemblies.Where(e => e.name is "GameCode" or "PuzzleSudoku").ToArray();
+            var assemblyArr = assemblies.ToArray();
             // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
@@ -33,13 +32,10 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
             List<string> asmdefPathList = new();
             GenerateRecursiveDict(assemblyArr, asmdefPathList);
-            asmdefPathList.Sort();
 
             foreach (var asmdefPath in asmdefPathList)
             {
-                var node = new AsmdefNode(asmdefPath, contentContainer);
-                AddElement(node);
-                _asmdefNodeDict.Add(asmdefPath, node);
+                _asmdefNodeDict.Add(asmdefPath, new AsmdefNode(asmdefPath, contentContainer));
             }
 
             var nodeProfiles2 = asmdefPathList.Select((path, _) => new NodeProfile(new(path), path)).ToDictionary(np => np.Name);
@@ -81,12 +77,17 @@ namespace AsmdefHelper.DependencyGraph.Editor
             foreach (var dep in _dependencies2.Values)
             {
                 if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var node)) continue;
-                node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
-                node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
+  
 
                 if (dep.Sources.Count == 0 && dep.Destinations.Count == 0)
                 {
                     node.Visibility = false;
+                }
+                else
+                {
+                    node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
+                    node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
+                    AddElement(node as GraphElement);
                 }
             }
         }
