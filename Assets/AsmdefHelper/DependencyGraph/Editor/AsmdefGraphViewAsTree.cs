@@ -48,48 +48,48 @@ namespace AsmdefHelper.DependencyGraph.Editor
             // "PuzzleRange",
             // "PuzzleSingles",
             // "PuzzleSlant",
-            // "PuzzleSudoku",
+            "PuzzleSudoku",
             // "PuzzleTents",
             // "PuzzleTowers",
             // "PuzzleUndead",
-            // "SystemAdvertisement",
-            // "SystemAnalytics",
-            // "SystemAppsflyer",
-            // "SystemAppStoreReview",
-            // "SystemAudio",
-            // "SystemAuth",
-            // "SystemDailyRewards",
-            // "SystemDateManagement",
-            // "SystemDateManagement.Test",
-            // "SystemFilePersistence",
-            // "SystemFirebaseFirestore",
-            // "SystemFirebaseRtdb",
-            // "SystemGameCenter",
-            // "SystemGameComponents",
-            // "SystemGameCurrency",
-            // "SystemGameFile",
-            // "SystemGameStateSync",
-            // "SystemI18n",
-            // "SystemI18n.Editor",
-            // "SystemIap",
-            // "SystemKitchenSink",
-            // "SystemLeaderboard",
-            // "SystemLogging",
-            // "SystemNotification",
-            // "SystemPuzzleData",
-            // "SystemPuzzleData.Editor",
-            // "SystemRecorder",
-            // "SystemSettings",
-            // "SystemSnapshotCamera",
-            // "SystemTheme",
-            // "SystemUIButton",
-            // "SystemUICommon",
-            // "SystemUIModal",
-            // "SystemUIResponsive",
-            // "SystemUIResponsive.Editor",
-            // "SystemUIResponsive.Tests.EditModeTests",
-            // "SystemUITab",
-            // "SystemUndoRedo",
+            "SystemAdvertisement",
+            "SystemAnalytics",
+            "SystemAppsflyer",
+            "SystemAppStoreReview",
+            "SystemAudio",
+            "SystemAuth",
+            "SystemDailyRewards",
+            "SystemDateManagement",
+            "SystemDateManagement.Test",
+            "SystemFilePersistence",
+            "SystemFirebaseFirestore",
+            "SystemFirebaseRtdb",
+            "SystemGameCenter",
+            "SystemGameComponents",
+            "SystemGameCurrency",
+            "SystemGameFile",
+            "SystemGameStateSync",
+            "SystemI18n",
+            "SystemI18n.Editor",
+            "SystemIap",
+            "SystemKitchenSink",
+            "SystemLeaderboard",
+            "SystemLogging",
+            "SystemNotification",
+            "SystemPuzzleData",
+            "SystemPuzzleData.Editor",
+            "SystemRecorder",
+            "SystemSettings",
+            "SystemSnapshotCamera",
+            "SystemTheme",
+            "SystemUIButton",
+            "SystemUICommon",
+            "SystemUIModal",
+            "SystemUIResponsive",
+            "SystemUIResponsive.Editor",
+            "SystemUIResponsive.Tests.EditModeTests",
+            "SystemUITab",
+            "SystemUndoRedo",
             "UtilEuclideanSpace",
             
         };
@@ -157,16 +157,16 @@ namespace AsmdefHelper.DependencyGraph.Editor
             {
                 if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var node)) continue;
 
-                if (dep.Sources.Count == 0 && dep.Destinations.Count == 0)
-                {
-                    node.Visibility = false;
-                }
-                else
-                {
+                // if (dep.Sources.Count == 0 && dep.Destinations.Count == 0)
+                // {
+                //     node.Visibility = false;
+                // }
+                // else
+                // {
                     node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
                     node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
                     AddElement(node as GraphElement);
-                }
+                // }
             }
         }
 
