@@ -1,7 +1,7 @@
 {
     "name": "dev.n5y.asmdefhelper",
     "displayName": "AsmdefHelper",
-    "version": "0.8.2",
+    "version": "0.8.4",
     "unity": "2022.1",
     "description": "Unity assembly definition utilities.",
     "keywords": ["asmdef", "editor"],

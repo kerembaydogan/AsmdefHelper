@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using AsmdefHelper.DependencyGraph.Editor.DependencyNode;
 using AsmdefHelper.DependencyGraph.Editor.DependencyNode.Sort;
@@ -16,89 +17,15 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
         private readonly Dictionary<string, IDependencyNode> _dependencies2;
 
-        public static readonly List<string> AsmNames = new()
-        {
-            "AppPreferenceData",
-            "Data",
-            // "DataAtoms",
-            // "DataAtoms.Editor",
-            "Database",
-            // "GameCode",
-            // "GameTypesParent",
-            "LangExtensions",
-            "MessageSystem",
-            // "PuzzleAdjacent",
-            // "PuzzleAquarium",
-            // "PuzzleCorral",
-            // "PuzzleDominosa",
-            // "PuzzleDoors",
-            // "PuzzleFilling",
-            // "PuzzleFlood",
-            // "PuzzleFrameSudoku",
-            // "PuzzleFutoshiki",
-            // "PuzzleGreaterThanSudoku",
-            // "PuzzleJigsawSudoku",
-            // "PuzzleKakuro",
-            // "PuzzleKeen",
-            // "PuzzleKillerSudoku",
-            // "PuzzleLightUp",
-            // "PuzzleLoopy",
-            // "PuzzleMagnets",
-            // "PuzzlePalisade",
-            // "PuzzleRange",
-            // "PuzzleSingles",
-            // "PuzzleSlant",
-            // "PuzzleSudoku",
-            // "PuzzleTents",
-            // "PuzzleTowers",
-            // "PuzzleUndead",
-            // "SystemAdvertisement",
-            // "SystemAnalytics",
-            // "SystemAppsflyer",
-            // "SystemAppStoreReview",
-            // "SystemAudio",
-            // "SystemAuth",
-            // "SystemDailyRewards",
-            // "SystemDateManagement",
-            // "SystemDateManagement.Test",
-            // "SystemFilePersistence",
-            // "SystemFirebaseFirestore",
-            // "SystemFirebaseRtdb",
-            // "SystemGameCenter",
-            // "SystemGameComponents",
-            // "SystemGameCurrency",
-            // "SystemGameFile",
-            // "SystemGameStateSync",
-            // "SystemI18n",
-            // "SystemI18n.Editor",
-            // "SystemIap",
-            // "SystemKitchenSink",
-            // "SystemLeaderboard",
-            // "SystemLogging",
-            // "SystemNotification",
-            // "SystemPuzzleData",
-            // "SystemPuzzleData.Editor",
-            // "SystemRecorder",
-            // "SystemSettings",
-            // "SystemSnapshotCamera",
-            // "SystemTheme",
-            // "SystemUIButton",
-            // "SystemUICommon",
-            // "SystemUIModal",
-            // "SystemUIResponsive",
-            // "SystemUIResponsive.Editor",
-            // "SystemUIResponsive.Tests.EditModeTests",
-            // "SystemUITab",
-            // "SystemUndoRedo",
-            "UtilEuclideanSpace",
-            
-        };
+        public static List<string> AsmNames = new();
 
 
         public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
-            // var assemblyArr = assemblies.ToArray();
-            // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
+            var textAsset = Resources.Load<TextAsset>("asmdef_helper/asmdef_names");
+            
+            AsmNames = new(textAsset.text.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries));
+
             var assemblyArr = assemblies.Where(e => AsmNames.Contains(e.name)).ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
@@ -163,9 +90,9 @@ namespace AsmdefHelper.DependencyGraph.Editor
                 // }
                 // else
                 // {
-                    node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
-                    node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
-                    AddElement(node as GraphElement);
+                node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
+                node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
+                AddElement(node as GraphElement);
                 // }
             }
         }
