@@ -176,7 +176,10 @@ namespace AsmdefHelper.DependencyGraph.Editor
             foreach (var asm in assemblyArr)
             {
                 dict.Add(root + "/" + asm.name);
-                GenerateRecursiveDict(asm.assemblyReferences, dict, root + "/" + asm.name);
+                var asmAssemblyReferencesUnfiltered = asm.assemblyReferences;
+                var asmAssemblyReferences = asmAssemblyReferencesUnfiltered.Where(e => AsmNames.Contains(e.name)).ToArray();
+
+                GenerateRecursiveDict(asmAssemblyReferences, dict, root + "/" + asm.name);
             }
         }
 
@@ -188,14 +191,17 @@ namespace AsmdefHelper.DependencyGraph.Editor
                 var asmName = rootAsmName + "/" + asm.name;
 
                 if (!nodeProfiles.TryGetValue(asmName, out var profile)) continue;
-                var requireProfiles = asm.assemblyReferences.Where(x => nodeProfiles.ContainsKey(asmName + "/" + x.name)).Select(x => nodeProfiles[asmName + "/" + x.name]).ToArray();
+                var asmAssemblyReferencesUnfiltered = asm.assemblyReferences;
+                var asmAssemblyReferences = asmAssemblyReferencesUnfiltered.Where(e => AsmNames.Contains(e.name)).ToArray();
+
+                var requireProfiles = asmAssemblyReferences.Where(x => nodeProfiles.ContainsKey(asmName + "/" + x.name)).Select(x => nodeProfiles[asmName + "/" + x.name]).ToArray();
                 var dep = new HashSetDependencyNode(profile);
                 dep.SetRequireNodes(requireProfiles);
                 var profileName = rootProfileName + profile.Name;
 
                 dict.Add(profileName, dep);
 
-                GenerateRecursiveDependenciesDict(asm.assemblyReferences, nodeProfiles, dict, asmName, profileName);
+                GenerateRecursiveDependenciesDict(asmAssemblyReferences, nodeProfiles, dict, asmName, profileName);
             }
         }
 
