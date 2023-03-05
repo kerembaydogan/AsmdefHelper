@@ -16,7 +16,7 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
         private readonly Dictionary<string, IDependencyNode> _dependencies2;
 
-        private readonly List<string> _asmNames = new()
+        public static readonly List<string> AsmNames = new()
         {
             "AppPreferenceData",
             "Data",
@@ -99,7 +99,7 @@ namespace AsmdefHelper.DependencyGraph.Editor
         {
             // var assemblyArr = assemblies.ToArray();
             // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
-            var assemblyArr = assemblies.Where(e => _asmNames.Contains(e.name)).ToArray();
+            var assemblyArr = assemblies.Where(e => AsmNames.Contains(e.name)).ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
 

@@ -35,7 +35,10 @@ namespace AsmdefHelper.DependencyGraph.Editor.AsmdefSelectionView {
 
 
         public void SetAsmdef(IEnumerable<Assembly> assemblies, IToggleCheckDelegate toggleDelegate) {
-            var sortedAssemblies = assemblies.OrderBy(x => x.name).ToArray();
+            
+            var assemblyArr = assemblies.Where(e => AsmdefGraphViewAsTree.AsmNames.Contains(e.name)).ToArray();
+
+            var sortedAssemblies = assemblyArr.OrderBy(x => x.name).ToArray();
 
             var scrollView = rootVisualElement.Q<ScrollView>(className: "ScrollView");
 
