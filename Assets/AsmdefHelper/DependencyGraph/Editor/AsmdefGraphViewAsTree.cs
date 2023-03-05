@@ -16,11 +16,90 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
         private readonly Dictionary<string, IDependencyNode> _dependencies2;
 
+        private readonly List<string> _asmNames = new()
+        {
+            "AppPreferenceData.asmdef",
+            "Data.asmdef",
+            "DataAtoms.asmdef",
+            "DataAtoms.Editor.asmdef",
+            "Database.asmdef",
+            "GameCode.asmdef",
+            "GameTypesParent.asmdef",
+            "LangExtensions.asmdef",
+            "MessageSystem.asmdef",
+            // "PuzzleAdjacent.asmdef",
+            // "PuzzleAquarium.asmdef",
+            // "PuzzleCorral.asmdef",
+            // "PuzzleDominosa.asmdef",
+            // "PuzzleDoors.asmdef",
+            // "PuzzleFilling.asmdef",
+            // "PuzzleFlood.asmdef",
+            // "PuzzleFrameSudoku.asmdef",
+            // "PuzzleFutoshiki.asmdef",
+            // "PuzzleGreaterThanSudoku.asmdef",
+            // "PuzzleJigsawSudoku.asmdef",
+            // "PuzzleKakuro.asmdef",
+            // "PuzzleKeen.asmdef",
+            // "PuzzleKillerSudoku.asmdef",
+            // "PuzzleLightUp.asmdef",
+            // "PuzzleLoopy.asmdef",
+            // "PuzzleMagnets.asmdef",
+            // "PuzzlePalisade.asmdef",
+            // "PuzzleRange.asmdef",
+            // "PuzzleSingles.asmdef",
+            // "PuzzleSlant.asmdef",
+            // "PuzzleSudoku.asmdef",
+            // "PuzzleTents.asmdef",
+            // "PuzzleTowers.asmdef",
+            // "PuzzleUndead.asmdef",
+            "SystemAdvertisement.asmdef",
+            "SystemAnalytics.asmdef",
+            "SystemAppsflyer.asmdef",
+            "SystemAppStoreReview.asmdef",
+            "SystemAudio.asmdef",
+            "SystemAuth.asmdef",
+            "SystemDailyRewards.asmdef",
+            "SystemDateManagement.asmdef",
+            "SystemDateManagement.Test.asmdef",
+            "SystemFilePersistence.asmdef",
+            "SystemFirebaseFirestore.asmdef",
+            "SystemFirebaseRtdb.asmdef",
+            "SystemGameCenter.asmdef",
+            "SystemGameComponents.asmdef",
+            "SystemGameCurrency.asmdef",
+            "SystemGameFile.asmdef",
+            "SystemGameStateSync.asmdef",
+            "SystemI18n.asmdef",
+            "SystemI18n.Editor.asmdef",
+            "SystemIap.asmdef",
+            "SystemKitchenSink.asmdef",
+            "SystemLeaderboard.asmdef",
+            "SystemLogging.asmdef",
+            "SystemNotification.asmdef",
+            "SystemPuzzleData.asmdef",
+            "SystemPuzzleData.Editor.asmdef",
+            "SystemRecorder.asmdef",
+            "SystemSettings.asmdef",
+            "SystemSnapshotCamera.asmdef",
+            "SystemTheme.asmdef",
+            "SystemUIButton.asmdef",
+            "SystemUICommon.asmdef",
+            "SystemUIModal.asmdef",
+            "SystemUIResponsive.asmdef",
+            "SystemUIResponsive.Editor.asmdef",
+            "SystemUIResponsive.Tests.EditModeTests.asmdef",
+            "SystemUITab.asmdef",
+            "SystemUndoRedo.asmdef",
+            "UtilEuclideanSpace.asmdef",
+            
+        };
+
 
         public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
-            var assemblyArr = assemblies.ToArray();
+            // var assemblyArr = assemblies.ToArray();
             // var assemblyArr = assemblies.Where(e => e.name is "UnityEngine.TestRunner" or "UnityEditor.TestRunner").ToArray();
+            var assemblyArr = assemblies.Where(e => _asmNames.Contains(e.name)).ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
 
@@ -77,7 +156,6 @@ namespace AsmdefHelper.DependencyGraph.Editor
             foreach (var dep in _dependencies2.Values)
             {
                 if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var node)) continue;
-  
 
                 if (dep.Sources.Count == 0 && dep.Destinations.Count == 0)
                 {
