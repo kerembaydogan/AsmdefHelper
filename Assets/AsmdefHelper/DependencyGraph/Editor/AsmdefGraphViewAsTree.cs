@@ -45,7 +45,9 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
             foreach (var asmdefPath in asmdefPathList)
             {
-                _asmdefNodeDict.Add(asmdefPath, new AsmdefNode(asmdefPath, contentContainer));
+                var nodeName = asmdefPath.Contains("->") ? asmdefPath[(asmdefPath.LastIndexOf("->") + 2)..] : asmdefPath;
+
+                _asmdefNodeDict.Add(asmdefPath, new AsmdefNode(nodeName, contentContainer));
             }
 
             var nodeProfiles2 = asmdefPathList.Select((path, _) => new NodeProfile(new(path), path)).ToDictionary(np => np.Name);
@@ -91,7 +93,7 @@ namespace AsmdefHelper.DependencyGraph.Editor
             {
                 if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var node))
                 {
-                    Debug.LogWarning(dep.Profile.Name + " GRAPH ELEMENT NOT ADDED TO GRAPH VIEW");
+                    Debug.LogError(dep.Profile.Name + " GRAPH ELEMENT NOT ADDED TO GRAPH VIEW");
                     continue;
                 }
                 node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
@@ -100,9 +102,11 @@ namespace AsmdefHelper.DependencyGraph.Editor
                 Debug.Log(dep.Profile.Name + " GRAPH ELEMENT ADDED TO GRAPH VIEW");
 
                 AddElement(node as GraphElement);
+
+                total++;
             }
 
-            Debug.Log(_dependencies2.Count + " GRAPH ELEMENT ADDED TO GRAPH VIEW");
+            Debug.Log(total + "/" + _dependencies2.Count + " GRAPH ELEMENT ADDED TO GRAPH VIEW");
         }
 
 
@@ -144,16 +148,15 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
         public void SetNodeVisibility(string nodeName, bool visibleOuter)
         {
-            
             if (!_asmdefNodeDict.TryGetValue(nodeName, out var node))
             {
-                Debug.LogWarning(key + " NOT FOUND");
+                Debug.LogWarning(nodeName + " NOT FOUND");
                 return;
             }
 
             node.Visibility = visibleOuter;
 
-            var tryGetValue = _dependencies2.TryGetValue(key, out var dep);
+            var tryGetValue = _dependencies2.TryGetValue(nodeName, out var dep);
 
             if (!tryGetValue) return;
             Debug.Log(dep.Destinations.Count);
