@@ -24,7 +24,7 @@ namespace AsmdefHelper.DependencyGraph.Editor
         {
             var textAsset = Resources.Load<TextAsset>("asmdef_helper/asmdef_names");
             
-            AsmNames = new(textAsset.text.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries));
+            AsmNames = new(textAsset.text.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
 
             var assemblyArr = assemblies.Where(e => AsmNames.Contains(e.name)).ToArray();
 
