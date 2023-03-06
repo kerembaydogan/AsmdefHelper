@@ -19,14 +19,18 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
         public static List<string> AsmNames = new();
 
+        private static List<string> _asmNamesIgnored = new();
+
 
         public AsmdefGraphViewAsTree(IEnumerable<Assembly> assemblies)
         {
             var textAsset = Resources.Load<TextAsset>("asmdef_helper/asmdef_names");
+            var textAssetIgnored = Resources.Load<TextAsset>("asmdef_helper/asmdef_names_ignored");
 
             AsmNames = new(textAsset.text.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
+            _asmNamesIgnored = new(textAssetIgnored.text.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
 
-            var assemblyArr = assemblies.Where(e => AsmNames.Contains(e.name)).ToArray();
+            var assemblyArr = assemblies.Where(e => AsmNames.Contains(e.name) && !_asmNamesIgnored.Contains(e.name)).ToArray();
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
 
@@ -36,27 +40,48 @@ namespace AsmdefHelper.DependencyGraph.Editor
 
             this.AddManipulator(new ContentDragger());
 
-            List<string> asmdefPathList = new();
+            this.AddManipulator(new RectangleSelector());
+
+            List<string> asmdefPathList = new(1000);
 
             foreach (var asmRoot in assemblyArr)
             {
                 GenerateRecursiveDict(asmRoot, asmdefPathList, "");
             }
 
+            asmdefPathList.Sort();
+
+            Debug.LogWarning(asmdefPathList.Count);
+
+            var nodeSizes = GenerateNodeSizes(asmdefPathList);
+
+            foreach (var s in asmdefPathList)
+            {
+                Debug.Log(s);
+            }
+
             foreach (var asmdefPath in asmdefPathList)
             {
-                var nodeName = asmdefPath.Contains("->") ? asmdefPath[(asmdefPath.LastIndexOf("->") + 2)..] : asmdefPath;
+                // var nodeName = asmdefPath.Contains("->") ? asmdefPath[(asmdefPath.LastIndexOf("->", StringComparison.Ordinal) + 2)..] : asmdefPath;
 
-                _asmdefNodeDict.Add(asmdefPath, new AsmdefNode(nodeName, contentContainer));
+                _asmdefNodeDict.Add(asmdefPath, new AsmdefNode(asmdefPath, contentContainer));
             }
 
             var nodeProfiles2 = asmdefPathList.Select((path, _) => new NodeProfile(new(path), path)).ToDictionary(np => np.Name);
 
             _dependencies2 = new(nodeProfiles2.Count);
+
+            var depth = 0;
+
             foreach (var asmRoot in assemblyArr)
             {
-                GenerateRecursiveDependenciesDict(asmRoot, nodeProfiles2, _dependencies2, "");
+                GenerateRecursiveDependenciesDict(asmRoot, nodeProfiles2, _dependencies2, "", depth++, 0);
             }
+
+            Debug.LogError("nodeProfiles2.Count " + nodeProfiles2.Count);
+
+            Debug.LogError("_dependencies2.Count" + _dependencies2.Count);
+
             NodeProcessor.SetBeRequiredNodes(_dependencies2.Values);
 
             foreach (var dep in _dependencies2.Values)
@@ -72,15 +97,15 @@ namespace AsmdefHelper.DependencyGraph.Editor
             foreach (var dep in _dependencies2.Values)
             {
                 if (!_asmdefNodeDict.TryGetValue(dep.Profile.Name, out var node)) continue;
-                node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
+                node.LeftPort.Label = $"{dep.Depth1}/{dep.Depth2}  RefBy({dep.Sources.Count})";
                 node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
             }
 
-            AlignSortStrategy sortStrategy = new(AlignParam.Default(), Vector2.zero);
+            KeremSortStrategy sortStrategy = new(nodeSizes);
 
-            var sortedNode = sortStrategy.Sort(_dependencies2.Values);
+            var sortedNodes = sortStrategy.Sort(_dependencies2.Values);
 
-            foreach (var nodeFromSorted in sortedNode)
+            foreach (var nodeFromSorted in sortedNodes)
             {
                 if (!_asmdefNodeDict.TryGetValue(nodeFromSorted.Profile.Name, out var node)) continue;
                 node.SetPositionXY(nodeFromSorted.Position);
@@ -96,8 +121,6 @@ namespace AsmdefHelper.DependencyGraph.Editor
                     Debug.LogError(dep.Profile.Name + " GRAPH ELEMENT NOT ADDED TO GRAPH VIEW");
                     continue;
                 }
-                node.LeftPort.Label = $"RefBy({dep.Sources.Count})";
-                node.RightPort.Label = $"RefTo({dep.Destinations.Count})";
 
                 Debug.Log(dep.Profile.Name + " GRAPH ELEMENT ADDED TO GRAPH VIEW");
 
@@ -110,14 +133,27 @@ namespace AsmdefHelper.DependencyGraph.Editor
         }
 
 
+        private static Dictionary<string, int> GenerateNodeSizes(IEnumerable<string> asmdefPathList)
+        {
+            var dictionary = asmdefPathList.ToDictionary(x => x, y => asmdefPathList.Count(p => p.StartsWith(y)));
+
+            foreach (var keyValuePair in dictionary)
+            {
+                Debug.Log(keyValuePair.Key + " : " + keyValuePair.Value);
+            }
+
+            return dictionary;
+        }
+
+
         private static void GenerateRecursiveDict(Assembly asm, ICollection<string> dict, string previousPath)
         {
             var currentPath = previousPath + asm.name;
 
             dict.Add(currentPath);
 
-            var asmAssemblyReferencesUnfiltered = asm.assemblyReferences;
-            var asmAssemblyReferences = asmAssemblyReferencesUnfiltered.Where(e => AsmNames.Contains(e.name)).ToArray();
+            // var asmAssemblyReferences = asm.assemblyReferences;
+            var asmAssemblyReferences = asm.assemblyReferences.Where(e => !_asmNamesIgnored.Contains(e.name)).ToArray();
 
             foreach (var asmChild in asmAssemblyReferences)
             {
@@ -126,22 +162,27 @@ namespace AsmdefHelper.DependencyGraph.Editor
         }
 
 
-        private static void GenerateRecursiveDependenciesDict(Assembly asm, IReadOnlyDictionary<string, NodeProfile> nodeProfiles, IDictionary<string, IDependencyNode> dict, string previousPath)
+        private static void GenerateRecursiveDependenciesDict(Assembly asm, IReadOnlyDictionary<string, NodeProfile> nodeProfiles, IDictionary<string, IDependencyNode> dict, string previousPath, int depth1, int depth2)
         {
             var currentPath = previousPath + asm.name;
 
             if (!nodeProfiles.TryGetValue(currentPath, out var profile)) return;
-            var asmAssemblyReferencesUnfiltered = asm.assemblyReferences;
-            var asmAssemblyReferences = asmAssemblyReferencesUnfiltered.Where(e => AsmNames.Contains(e.name)).ToArray();
+
+            // var asmAssemblyReferences = asm.assemblyReferences;
+            var asmAssemblyReferences = asm.assemblyReferences.Where(e => !_asmNamesIgnored.Contains(e.name)).ToArray();
 
             var requireProfiles = asmAssemblyReferences.Where(x => nodeProfiles.ContainsKey(currentPath + "->" + x.name)).Select(x => nodeProfiles[currentPath + "->" + x.name]).ToArray();
-            var dep = new HashSetDependencyNode(profile);
-            dep.SetRequireNodes(requireProfiles);
+            var dep = new HashSetDependencyNode(profile, depth1, depth2);
 
+            depth1++;
+
+            dep.SetRequireNodes(requireProfiles);
             dict.Add(currentPath, dep);
+
             foreach (var asmChild in asmAssemblyReferences)
             {
-                GenerateRecursiveDependenciesDict(asmChild, nodeProfiles, dict, currentPath + "->");
+                GenerateRecursiveDependenciesDict(asmChild, nodeProfiles, dict, currentPath + "->", depth1, depth2);
+                depth2++;
             }
         }
 
@@ -159,7 +200,6 @@ namespace AsmdefHelper.DependencyGraph.Editor
             var tryGetValue = _dependencies2.TryGetValue(nodeName, out var dep);
 
             if (!tryGetValue) return;
-            Debug.Log(dep.Destinations.Count);
 
             foreach (var valueDestination in dep.Destinations)
             {
